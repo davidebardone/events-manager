@@ -6,10 +6,7 @@ class Event(models.Model):
     desc = models.CharField(max_length=1024)
     start_date = models.DateField()
     end_date = models.DateField()
-    author = models.ForeignKey(
-        "auth.User",
-        on_delete=models.CASCADE,
-    )
+    author = models.ForeignKey("auth.User", on_delete=models.CASCADE)
 
     def __str__(self):
         return self.name
