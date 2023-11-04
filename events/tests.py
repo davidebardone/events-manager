@@ -7,7 +7,7 @@ from django.contrib.auth import get_user_model
 from rest_framework import status
 from rest_framework.test import APIClient 
 
-from .models import Event
+from .models import Event, EventRegistration
 
 UserModel = get_user_model()
 
@@ -41,17 +41,27 @@ class EventModelTest(TestCase):
         cls.event1 = Event.objects.create(
             name='Event',
             desc='Description of a wonderful event',
-            start_date=date(2023, 12, 25),
-            end_date=date(2023, 12, 26),
+            start_date=date.today(),
+            end_date=date.today(),
             author = user1
         )
         cls.event2 = Event.objects.create(
             name='Second Event',
             desc='Description of another wonderful event',
-            start_date=date(2024, 12, 25),
-            end_date=date(2024, 12, 26),
+            start_date=date.today()+timedelta(days=1),
+            end_date=date.today()+timedelta(days=2),
             author = user2
         )
+        cls.pastevent = Event.objects.create(
+            name='Old Event',
+            desc='Description of an old past event',
+            start_date=date.today()-timedelta(days=10),
+            end_date=date.today()-timedelta(days=9),
+            author = user2
+        )
+
+        # make a registration to a past event for user 2
+        EventRegistration.objects.create(attendee=cls.user2, event=cls.pastevent)
 
         # login and save jwt access tokens
         response = client.post(
@@ -74,12 +84,27 @@ class EventModelTest(TestCase):
         response = client.get(reverse('events_list'))
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
         
-        # get events
+        # get user 1 events
         client.credentials(HTTP_AUTHORIZATION=f'Bearer {self.token}')
         response = client.get(reverse('events_list'))
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         data = json.loads(response.content)
-        self.assertEqual(len(data), 2)
+        self.assertEqual(len(data), 3)
+    
+    
+    def test_list_my_events(self):
+        # check unauthorized
+        client.credentials(HTTP_AUTHORIZATION=f'Bearer xxx')
+        response = client.get(reverse('my_events_list'))
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        
+        # get user 1 events
+        client.credentials(HTTP_AUTHORIZATION=f'Bearer {self.token}')
+        response = client.get(reverse('my_events_list'))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        data = json.loads(response.content)
+        self.assertEqual(len(data), 1)
+        self.assertTrue(data[0]['is_author'])
 
 
     def test_get_event(self):
@@ -103,6 +128,7 @@ class EventModelTest(TestCase):
     
     def test_create_event(self):
         # check unauthorized
+        client.credentials(HTTP_AUTHORIZATION=f'Bearer xxx')
         response = client.post(reverse('events_list'))
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
         
@@ -130,33 +156,32 @@ class EventModelTest(TestCase):
         self.assertTrue('non_field_errors' in data)
 
 
-    def test_list_my_events(self):
+    def test_register_to_event(self):
         # check unauthorized
         client.credentials(HTTP_AUTHORIZATION=f'Bearer xxx')
-        response = client.get(reverse('my_events_list'))
+        response = client.post(reverse('event_registration', kwargs={'pk': 1}))
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
         
-        # get events
+        # check unexisting event
         client.credentials(HTTP_AUTHORIZATION=f'Bearer {self.token}')
-        response = client.get(reverse('my_events_list'))
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        response = client.post(reverse('event_registration', kwargs={'pk': 1_000}))
         data = json.loads(response.content)
-        self.assertEqual(len(data), 1)
-
-
-    def test_register_to_event(self):
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        
+        # user 1 registers to event 1
         client.credentials(HTTP_AUTHORIZATION=f'Bearer {self.token}')
         response = client.post(reverse('event_registration', kwargs={'pk': 1}))
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+        
+        # user 2 registers to event 1
         client.credentials(HTTP_AUTHORIZATION=f'Bearer {self.token2}')
         response = client.post(reverse('event_registration', kwargs={'pk': 1}))
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         
-        # check attendees
+        # check event 1 attendees
         response = client.get(reverse('event_detail', kwargs={'pk': 1}))
         data = json.loads(response.content)
         self.assertEqual(len(data['attendees']), 2)
-        print(data['attendees'])
         self.assertEqual(
             [attendee['attendee']['username'] for attendee in data['attendees']],
             [self.user1.username, self.user2.username]
@@ -165,4 +190,59 @@ class EventModelTest(TestCase):
         # check duplicated registration
         client.credentials(HTTP_AUTHORIZATION=f'Bearer {self.token}')
         response = client.post(reverse('event_registration', kwargs={'pk': 1}))
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertTrue('already registered' in str(response.content).lower())
+
+        # chek registration to a past event
+        client.credentials(HTTP_AUTHORIZATION=f'Bearer {self.token}')
+        response = client.post(reverse('event_registration', kwargs={'pk': 3}))
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertTrue('already started' in str(response.content).lower())
+
+
+    def test_unregister_to_event(self):
+        # check unauthorized
+        client.credentials(HTTP_AUTHORIZATION=f'Bearer xxx')
+        response = client.post(reverse('event_registration', kwargs={'pk': 1}))
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        
+        # check unexisting event
+        client.credentials(HTTP_AUTHORIZATION=f'Bearer {self.token}')
+        response = client.delete(reverse('event_registration', kwargs={'pk': 1_000}))
+        data = json.loads(response.content)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        
+        # user 1 registers to event 1
+        client.credentials(HTTP_AUTHORIZATION=f'Bearer {self.token}')
+        response = client.post(reverse('event_registration', kwargs={'pk': 1}))
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+        
+        # user 2 registers to event 1
+        client.credentials(HTTP_AUTHORIZATION=f'Bearer {self.token2}')
+        response = client.post(reverse('event_registration', kwargs={'pk': 1}))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        
+        # unregister from an not registered event
+        client.credentials(HTTP_AUTHORIZATION=f'Bearer {self.token}')
+        response = client.delete(reverse('event_registration', kwargs={'pk': 2}))
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        
+        # user 1 unregisters from event 1
+        client.credentials(HTTP_AUTHORIZATION=f'Bearer {self.token}')
+        response = client.delete(reverse('event_registration', kwargs={'pk': 1}))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        # check event 1 attendees
+        response = client.get(reverse('event_detail', kwargs={'pk': 1}))
+        data = json.loads(response.content)
+        self.assertEqual(len(data['attendees']), 1)
+        self.assertEqual(
+            [attendee['attendee']['username'] for attendee in data['attendees']],
+            [self.user2.username]
+        )
+
+        # unregister user 2 to a past event
+        client.credentials(HTTP_AUTHORIZATION=f'Bearer {self.token2}')
+        response = client.delete(reverse('event_registration', kwargs={'pk': 3}))
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertTrue('already started' in str(response.content).lower())

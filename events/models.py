@@ -17,6 +17,7 @@ class EventRegistration(models.Model):
     attendee = models.ForeignKey("auth.User", on_delete=models.CASCADE)
 
     class Meta:
+        # registrations cannot be duplicated
         unique_together = (("event", "attendee"),)
 
     def __str__(self):

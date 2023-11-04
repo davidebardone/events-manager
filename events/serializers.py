@@ -1,5 +1,6 @@
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
+from rest_framework.validators import UniqueTogetherValidator
 
 from events.models import Event, EventRegistration
 
@@ -19,10 +20,11 @@ class AttendeeSerializer(serializers.ModelSerializer):
 
 class EventSerializer(serializers.ModelSerializer):
     attendees = serializers.SerializerMethodField(read_only=True)
+    is_author = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = Event
-        fields = ("id", "name", "desc", "start_date", "end_date", "attendees")
+        fields = ("id", "name", "desc", "start_date", "end_date", "is_author", "attendees")
 
 
     def validate(self, attrs):
@@ -44,12 +46,17 @@ class EventSerializer(serializers.ModelSerializer):
         except Exception as e:
             print(e)
         return serializer.data
+    
 
+    def get_is_author(self, obj):
+        user = self.context['request'].user
+        return obj.author == user
+    
 
 class EventRegistrationSerializer(serializers.ModelSerializer):
     
     attendee = AttendeeSerializer(read_only=True)
-    
+
     class Meta:
         model = EventRegistration
-        fields = ('attendee',)
+        fields = ('attendee', )
