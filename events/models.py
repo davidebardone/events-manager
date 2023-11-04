@@ -1,4 +1,5 @@
 from django.db import models
+from django.core import validators
 
 
 class Event(models.Model):
@@ -6,6 +7,12 @@ class Event(models.Model):
     desc = models.CharField(max_length=1024)
     start_date = models.DateField()
     end_date = models.DateField()
+    max_capacity = models.IntegerField(
+        default=1,
+        validators=[
+            validators.MinValueValidator(1)
+        ]
+    )
     author = models.ForeignKey("auth.User", on_delete=models.CASCADE)
 
     def __str__(self) -> str:

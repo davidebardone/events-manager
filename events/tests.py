@@ -43,21 +43,24 @@ class EventModelTest(TestCase):
             desc='Description of a wonderful event',
             start_date=date.today(),
             end_date=date.today(),
-            author = user1
+            max_capacity=2,
+            author=user1
         )
         cls.event2 = Event.objects.create(
             name='Second Event',
             desc='Description of another wonderful event',
             start_date=date.today()+timedelta(days=1),
             end_date=date.today()+timedelta(days=2),
-            author = user2
+            max_capacity=1,
+            author=user2
         )
         cls.pastevent = Event.objects.create(
             name='Old Event',
             desc='Description of an old past event',
             start_date=date.today()-timedelta(days=10),
             end_date=date.today()-timedelta(days=9),
-            author = user2
+            max_capacity=20,
+            author=user2
         )
 
         # make a registration to a past event for user 2
@@ -90,6 +93,14 @@ class EventModelTest(TestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         data = json.loads(response.content)
         self.assertEqual(len(data), 3)
+
+    
+    def test_list_filtered_events(self):
+        client.credentials(HTTP_AUTHORIZATION=f'Bearer {self.token}')
+        response = client.get(f"{reverse('events_list')}?date={str(date.today())}")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        data = json.loads(response.content)
+        self.assertEqual(len(data), 1)
     
     
     def test_list_my_events(self):
@@ -214,6 +225,11 @@ class EventModelTest(TestCase):
         response = client.post(reverse('event_registration', kwargs={'pk': 1}))
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         
+        # user 2 registers to event 2
+        client.credentials(HTTP_AUTHORIZATION=f'Bearer {self.token2}')
+        response = client.post(reverse('event_registration', kwargs={'pk': 2}))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        
         # check event 1 attendees
         response = client.get(reverse('event_detail', kwargs={'pk': 1}))
         data = json.loads(response.content)
@@ -222,6 +238,12 @@ class EventModelTest(TestCase):
             [attendee['attendee']['username'] for attendee in data['attendees']],
             [self.user1.username, self.user2.username]
         )
+
+        # check max capacity
+        client.credentials(HTTP_AUTHORIZATION=f'Bearer {self.token}')
+        response = client.post(reverse('event_registration', kwargs={'pk': 2}))
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertTrue('maximum capacity' in str(response.content).lower())
 
         # check duplicated registration
         client.credentials(HTTP_AUTHORIZATION=f'Bearer {self.token}')

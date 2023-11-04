@@ -53,7 +53,13 @@ class EventSerializer(serializers.ModelSerializer):
     def get_is_author(self, obj) -> bool:
         user = self.context['request'].user
         return obj.author == user
-    
+
+
+class EventFilterSerializer(serializers.Serializer):
+    date = serializers.DateField(required=False)
+    ispast = serializers.BooleanField(required=False)
+    isfuture = serializers.BooleanField(required=False)
+
 
 class EventRegistrationSerializer(serializers.ModelSerializer):
     
