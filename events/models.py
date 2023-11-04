@@ -16,5 +16,8 @@ class EventRegistration(models.Model):
     event = models.ForeignKey(Event, on_delete=models.CASCADE)
     attendee = models.ForeignKey("auth.User", on_delete=models.CASCADE)
 
+    class Meta:
+        unique_together = (("event", "attendee"),)
+
     def __str__(self):
         return f"{self.event.name} - Attendee: {self.attendee.first_name} {self.attendee.last_name}"

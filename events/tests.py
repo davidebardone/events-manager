@@ -33,7 +33,10 @@ class EventModelTest(TestCase):
         
         response = client.post(reverse('user_create'), userdata2, format='json')
         user2 = UserModel.objects.get(pk=json.loads(response.content)['id'])
-        
+
+        cls.user1 = user1
+        cls.user2 = user2
+
         # test events
         cls.event1 = Event.objects.create(
             name='Event',
@@ -80,12 +83,22 @@ class EventModelTest(TestCase):
 
 
     def test_get_event(self):
+        # check unauthorized
+        client.credentials(HTTP_AUTHORIZATION=f'Bearer xxx')
+        response = client.get(reverse('event_detail', kwargs={'pk': 1}))
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        
         # get a specific event
         client.credentials(HTTP_AUTHORIZATION=f'Bearer {self.token}')
         response = client.get(reverse('event_detail', kwargs={'pk': 1}))
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         data = json.loads(response.content)
         self.assertEqual(data['name'], self.event1.name)
+
+        # check wrong id
+        client.credentials(HTTP_AUTHORIZATION=f'Bearer {self.token}')
+        response = client.get(reverse('event_detail', kwargs={'pk': 1_000}))
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     
     def test_create_event(self):
@@ -136,5 +149,20 @@ class EventModelTest(TestCase):
         response = client.post(reverse('event_registration', kwargs={'pk': 1}))
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         client.credentials(HTTP_AUTHORIZATION=f'Bearer {self.token2}')
+        response = client.post(reverse('event_registration', kwargs={'pk': 1}))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        
+        # check attendees
+        response = client.get(reverse('event_detail', kwargs={'pk': 1}))
+        data = json.loads(response.content)
+        self.assertEqual(len(data['attendees']), 2)
+        print(data['attendees'])
+        self.assertEqual(
+            [attendee['attendee']['username'] for attendee in data['attendees']],
+            [self.user1.username, self.user2.username]
+        )
+
+        # check duplicated registration
+        client.credentials(HTTP_AUTHORIZATION=f'Bearer {self.token}')
         response = client.post(reverse('event_registration', kwargs={'pk': 1}))
         self.assertEqual(response.status_code, status.HTTP_200_OK)

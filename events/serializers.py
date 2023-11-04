@@ -47,6 +47,9 @@ class EventSerializer(serializers.ModelSerializer):
 
 
 class EventRegistrationSerializer(serializers.ModelSerializer):
+    
+    attendee = AttendeeSerializer(read_only=True)
+    
     class Meta:
         model = EventRegistration
-        fields = ('id',)
+        fields = ('attendee',)
