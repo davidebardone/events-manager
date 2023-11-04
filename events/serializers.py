@@ -28,7 +28,9 @@ class EventSerializer(serializers.ModelSerializer):
 
 
     def validate(self, attrs):
-        if attrs['start_date'] > attrs['end_date']:
+        # check if dates are coherent (start before or same as end)
+        if ('start_date' in attrs and 'end_date' in attrs and
+            attrs['start_date'] > attrs['end_date']):
             raise serializers.ValidationError("start_date must be before or same as end_date")
         return attrs
 

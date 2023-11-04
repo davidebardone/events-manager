@@ -180,6 +180,16 @@ class EventModelTest(TestCase):
             data=new_data, format='json'
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(json.loads(response.content)['name'], new_data['name'])
+        
+        # patch event 
+        client.credentials(HTTP_AUTHORIZATION=f'Bearer {self.token}')
+        response = client.patch(
+            reverse('event_detail', kwargs={'pk': 1}),
+            data={'name': 'patched'}, format='json'
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(json.loads(response.content)['name'], 'patched')
 
 
     def test_register_to_event(self):
