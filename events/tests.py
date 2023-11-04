@@ -172,6 +172,14 @@ class EventModelTest(TestCase):
         client.credentials(HTTP_AUTHORIZATION=f'Bearer {self.token}')
         response = client.put(reverse('event_detail', kwargs={'pk': 2}))
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        
+        # update event 
+        client.credentials(HTTP_AUTHORIZATION=f'Bearer {self.token}')
+        response = client.put(
+            reverse('event_detail', kwargs={'pk': 1}),
+            data=new_data, format='json'
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
 
 
     def test_register_to_event(self):
