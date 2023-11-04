@@ -8,7 +8,7 @@ class Event(models.Model):
     end_date = models.DateField()
     author = models.ForeignKey("auth.User", on_delete=models.CASCADE)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.name
     
 
@@ -20,5 +20,5 @@ class EventRegistration(models.Model):
         # registrations cannot be duplicated
         unique_together = (("event", "attendee"),)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"{self.event.name} - Attendee: {self.attendee.first_name} {self.attendee.last_name}"

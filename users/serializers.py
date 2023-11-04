@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
+from django.contrib.auth.hashers import make_password
 
 # default user model
 UserModel = get_user_model()
@@ -11,15 +12,12 @@ class UserSerializer(serializers.ModelSerializer):
     last_name = serializers.CharField(max_length=50)
     password = serializers.CharField(write_only=True)
 
-    def create(self, validated_data):
-        user = UserModel.objects.create_user(
-            username=validated_data['username'],
-            first_name=validated_data['first_name'],
-            last_name=validated_data['last_name'],
-            password=validated_data['password'],
-        )
-        return user
-
     class Meta:
         model = UserModel
-        fields = ( "id", "username", "first_name", "last_name", "password")
+        fields = ("username", "first_name", "last_name", "password")
+
+    def validate_password(self, value: str) -> str:
+        """
+        Hash the password passed by user
+        """
+        return make_password(value)

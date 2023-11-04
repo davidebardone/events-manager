@@ -29,10 +29,10 @@ class EventModelTest(TestCase):
         userdata2['username'] = 'user2'
         
         response = client.post(reverse('user_create'), userdata, format='json')
-        user1 = UserModel.objects.get(pk=json.loads(response.content)['id'])
+        user1 = UserModel.objects.get(username=json.loads(response.content)['username'])
         
         response = client.post(reverse('user_create'), userdata2, format='json')
-        user2 = UserModel.objects.get(pk=json.loads(response.content)['id'])
+        user2 = UserModel.objects.get(username=json.loads(response.content)['username'])
 
         cls.user1 = user1
         cls.user2 = user2
@@ -154,6 +154,24 @@ class EventModelTest(TestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         data = json.loads(response.content)
         self.assertTrue('non_field_errors' in data)
+
+
+    def test_edit_event(self):
+        new_data = {
+            'name': 'Wonderful event [EDITED]',
+            'desc': 'What a wonderful event, once in a lifetime! [EDITED]',
+            'start_date': date.today()+timedelta(days=10),
+            'end_date': date.today()+timedelta(days=10)
+        }
+        # check unauthorized
+        client.credentials(HTTP_AUTHORIZATION=f'Bearer xxx')
+        response = client.put(reverse('event_detail', kwargs={'pk': 1}))
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+        # try to edit an event when user is not author 
+        client.credentials(HTTP_AUTHORIZATION=f'Bearer {self.token}')
+        response = client.put(reverse('event_detail', kwargs={'pk': 2}))
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
 
     def test_register_to_event(self):

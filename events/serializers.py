@@ -29,7 +29,7 @@ class EventSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         if attrs['start_date'] > attrs['end_date']:
-            raise serializers.ValidationError("start_date must be <= than end_date")
+            raise serializers.ValidationError("start_date must be before or same as end_date")
         return attrs
 
 
@@ -48,7 +48,7 @@ class EventSerializer(serializers.ModelSerializer):
         return serializer.data
     
 
-    def get_is_author(self, obj):
+    def get_is_author(self, obj) -> bool:
         user = self.context['request'].user
         return obj.author == user
     
