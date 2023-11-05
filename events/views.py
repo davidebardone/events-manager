@@ -38,6 +38,10 @@ class ListEventAPIView(generics.ListCreateAPIView):
         queryset = Event.objects.all()
         if filters.get('date'):
             queryset = queryset.filter(start_date=filters['date'])
+        if filters.get('is_past') and not filters.get('is_future'):
+            queryset = queryset.filter(start_date__lt=date.today())
+        if filters.get('is_future') and not filters.get('is_past'):
+            queryset = queryset.filter(start_date__gte=date.today())
         return queryset
 
 

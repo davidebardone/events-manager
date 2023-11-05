@@ -97,10 +97,26 @@ class EventModelTest(TestCase):
     
     def test_list_filtered_events(self):
         client.credentials(HTTP_AUTHORIZATION=f'Bearer {self.token}')
+        # only today events
         response = client.get(f"{reverse('events_list')}?date={str(date.today())}")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         data = json.loads(response.content)
         self.assertEqual(len(data), 1)
+        # past events
+        response = client.get(f"{reverse('events_list')}?is_past=true")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        data = json.loads(response.content)
+        self.assertEqual(len(data), 1)
+        # future events
+        response = client.get(f"{reverse('events_list')}?is_future=true")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        data = json.loads(response.content)
+        self.assertEqual(len(data), 2)
+        # past and future
+        response = client.get(f"{reverse('events_list')}?is_future=true&is_past=true")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        data = json.loads(response.content)
+        self.assertEqual(len(data), 3)
     
     
     def test_list_my_events(self):

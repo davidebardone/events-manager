@@ -56,9 +56,12 @@ class EventSerializer(serializers.ModelSerializer):
 
 
 class EventFilterSerializer(serializers.Serializer):
+    """
+    Serializer used for query params validation
+    """
     date = serializers.DateField(required=False)
-    ispast = serializers.BooleanField(required=False)
-    isfuture = serializers.BooleanField(required=False)
+    is_past = serializers.BooleanField(required=False)
+    is_future = serializers.BooleanField(required=False)
 
 
 class EventRegistrationSerializer(serializers.ModelSerializer):
