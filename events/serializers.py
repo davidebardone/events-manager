@@ -9,6 +9,9 @@ UserModel = get_user_model()
 
 
 class AttendeeSerializer(serializers.ModelSerializer):
+    '''
+    Used to add attendees information inside the EventRegistrationSerializer
+    '''
     class Meta:
         model = UserModel
         fields = [
@@ -40,6 +43,7 @@ class EventSerializer(serializers.ModelSerializer):
 
 
     def create(self, validated_data):
+        # use currently logged user as author
         event = Event(**validated_data, author=self.context['request'].user)
         event.save()
         return event
