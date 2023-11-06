@@ -21,10 +21,14 @@ class AttendeeSerializer(serializers.ModelSerializer):
 class EventSerializer(serializers.ModelSerializer):
     attendees = serializers.SerializerMethodField(read_only=True)
     is_author = serializers.SerializerMethodField(read_only=True)
+    is_attendee = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = Event
-        fields = ("id", "name", "desc", "start_date", "end_date", "is_author", "attendees")
+        fields = (
+            "id", "name", "desc", "start_date", "end_date",
+            "is_author", "is_attendee", "attendees", "max_capacity"
+        )
 
 
     def validate(self, attrs):
@@ -42,6 +46,7 @@ class EventSerializer(serializers.ModelSerializer):
 
 
     def get_attendees(self, obj):
+        # get list of all registered attendees
         qs = EventRegistration.objects.filter(event=obj)
         try:
             serializer = EventRegistrationSerializer(qs, many=True)
@@ -51,8 +56,17 @@ class EventSerializer(serializers.ModelSerializer):
     
 
     def get_is_author(self, obj) -> bool:
+        # is current logged user the author
         user = self.context['request'].user
         return obj.author == user
+
+
+    def get_is_attendee(self, obj) -> bool:
+        # is current logged user among registered attendees
+        user = self.context['request'].user
+        return EventRegistration.objects.filter(
+            event=obj, attendee=user
+        ).exists()
 
 
 class EventFilterSerializer(serializers.Serializer):

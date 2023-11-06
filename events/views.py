@@ -26,7 +26,6 @@ class ListEventAPIView(generics.ListCreateAPIView):
     """
     queryset = Event.objects.all()
     serializer_class = EventSerializer
-    
 
     def get_queryset(self):
         """
@@ -42,7 +41,8 @@ class ListEventAPIView(generics.ListCreateAPIView):
             queryset = queryset.filter(start_date__lt=date.today())
         if filters.get('is_future') and not filters.get('is_past'):
             queryset = queryset.filter(start_date__gte=date.today())
-        return queryset
+        # order by start date (default ordering)
+        return queryset.order_by('start_date')
 
 
 class RegisterToEventAPIView(APIView):
@@ -94,7 +94,8 @@ class ListMyEventsAPIView(generics.ListAPIView):
 
     def get_queryset(self):
         user = self.request.user
-        return Event.objects.filter(author=user)
+        # filter by author and order by start date (default ordering)
+        return Event.objects.filter(author=user).order_by('start_date')
 
 
 class DetailEventAPIView(generics.RetrieveUpdateAPIView):

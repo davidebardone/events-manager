@@ -38,11 +38,11 @@ instance.interceptors.response.use(
       if (err.response.status === 401 && !originalConfig._retry) {
         originalConfig._retry = true;  // avoid infinite loop
         try {
-          const rs = await instance.post("/token/refresh", {
-            refreshToken: TokenService.getLocalRefreshToken(),
+          const rs = await instance.post("/token/refresh/", {
+            refresh: TokenService.getLocalRefreshToken(),
           });
-          const { accessToken } = rs.data;
-          TokenService.updateLocalAccessToken(accessToken);
+          const { access } = rs.data;
+          TokenService.updateLocalAccessToken(access);
           return instance(originalConfig);
         } catch (_error) {
           return Promise.reject(_error);
