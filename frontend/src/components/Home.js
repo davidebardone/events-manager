@@ -15,7 +15,7 @@ const Home = () => {
         <Container fixed>
             <Box sx={{marginTop: 8, display: 'flex', alignItems: 'center'}}>
                 <Typography component="h1" variant="h3">
-                    EventManager
+                    Events Manager
                 </Typography>
             </Box>
 

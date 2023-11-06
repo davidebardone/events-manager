@@ -13,7 +13,7 @@ const MyEvents = () => {
     const [events, setEvents] = useState([]);
 
     useEffect(() => {
-        EventService.listMine().then(
+        EventService.list({'mine': true}).then(
             (res) => {setEvents(res.data)}
         )
     }, [])
@@ -23,9 +23,9 @@ const MyEvents = () => {
         <AppToolbar/>
         
         <Container fixed>
-            <Box sx={{margin: 8, display: 'flex', alignItems: 'center'}}>
+            <Box sx={{marginTop: 8, display: 'flex', alignItems: 'center'}}>
                 <Typography component="h1" variant="h3">
-                    My Events
+                    My Events ({events.length})
                 </Typography>
             </Box>
 

@@ -17,10 +17,6 @@ const list = (filters) => {
     return api.get('/events', {params: filters});
 }
 
-const listMine = () => {
-    return api.get('/events/mine/');
-}
-
 const register = (eventId) => {
     return api.post(`/events/${eventId}/registrations`)
 }
@@ -35,7 +31,6 @@ const EventService = {
     get,
     update,
     list,
-    listMine,
     register,
     unregister
 }

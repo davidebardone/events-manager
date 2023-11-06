@@ -122,12 +122,12 @@ class EventModelTest(TestCase):
     def test_list_my_events(self):
         # check unauthorized
         client.credentials(HTTP_AUTHORIZATION=f'Bearer xxx')
-        response = client.get(reverse('my_events_list'))
+        response = client.get(f"{reverse('events_list')}?mine=true")
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
         
         # get user 1 events
         client.credentials(HTTP_AUTHORIZATION=f'Bearer {self.token}')
-        response = client.get(reverse('my_events_list'))
+        response = client.get(f"{reverse('events_list')}?mine=true")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         data = json.loads(response.content)
         self.assertEqual(len(data), 1)

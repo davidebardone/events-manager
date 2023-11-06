@@ -17,6 +17,7 @@ class ListEventAPIView(generics.ListCreateAPIView):
     get:
     Return a list of all existing events.
     Query params:
+        mine -- only events created by the user
         date -- list all events starting on a specific date
         past -- return only past events if true
         future -- return only future events if true 
@@ -35,6 +36,9 @@ class ListEventAPIView(generics.ListCreateAPIView):
         filters_serializer.is_valid(raise_exception=True)
         filters = filters_serializer.validated_data
         queryset = Event.objects.all()
+        if filters.get('mine'):
+            user = self.request.user
+            queryset = queryset.filter(author=user)
         if filters.get('date'):
             queryset = queryset.filter(start_date=filters['date'])
         if filters.get('is_past') and not filters.get('is_future'):
@@ -84,18 +88,6 @@ class RegisterToEventAPIView(APIView):
             return Response("Event already started", status=status.HTTP_400_BAD_REQUEST)
         registration.delete()
         return Response("Registration deleted", status=status.HTTP_200_OK)
-
-
-class ListMyEventsAPIView(generics.ListAPIView):
-    """
-    List all events created by the current user
-    """
-    serializer_class = EventSerializer
-
-    def get_queryset(self):
-        user = self.request.user
-        # filter by author and order by start date (default ordering)
-        return Event.objects.filter(author=user).order_by('start_date')
 
 
 class DetailEventAPIView(generics.RetrieveUpdateAPIView):

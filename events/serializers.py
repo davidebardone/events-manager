@@ -73,6 +73,7 @@ class EventFilterSerializer(serializers.Serializer):
     """
     Serializer used for query params validation
     """
+    mine = serializers.BooleanField(required=False)
     date = serializers.DateField(required=False)
     is_past = serializers.BooleanField(required=False)
     is_future = serializers.BooleanField(required=False)

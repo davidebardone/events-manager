@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import Button from '@mui/material/Button';
+import Box from '@mui/material/Box';
 import Grid from '@mui/material/Grid';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
@@ -59,6 +60,7 @@ const EventsList = ({ events }) => {
 
             <Grid item xs={12} sm={4} key={event.id}>
                 <Card sx={{ minWidth: 275, margin: 2}}>
+                    
                     <CardContent>
                         <Typography gutterBottom variant="h5" component="div">
                             {event.name}
@@ -66,16 +68,21 @@ const EventsList = ({ events }) => {
                         <Typography variant="body2" color="text.secondary">
                             {event.desc}
                         </Typography>
+                        <Box sx={{marginY: 1}}>
+                            <Typography variant="body2">
+                                <b>Start</b> {event.start_date}
+                            </Typography>
+                        </Box>
+                        <Box sx={{marginBottom: 1}}>
+                            <Typography variant="body2">
+                                <b>End:</b> {event.end_date}
+                            </Typography>
+                        </Box>
                         <Typography variant="body2">
-                            Start: {event.start_date}
-                        </Typography>
-                        <Typography variant="body2">
-                            End: {event.end_date}
-                        </Typography>
-                        <Typography variant="body2">
-                            Capacity: {event.attendees.length}/{event.max_capacity}
+                            <b>Capacity:</b> {event.attendees.length}/{event.max_capacity}
                         </Typography>
                     </CardContent>
+                    
                     <CardActions>
                         { 
                             dayjs(event.start_date) > dayjs() && event.is_author &&

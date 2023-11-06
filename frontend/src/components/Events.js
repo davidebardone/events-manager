@@ -15,12 +15,14 @@ import EventService from '../services/event.service';
 const Events = () => {
 
     const [events, setEvents] = useState([]);
+    const [mineFilter, setMineFilter] = useState();
     const [dateFilter, setDateFilter] = useState();
     const [pastFilter, setPastFilter] = useState(false);
     const [futureFilter, setFutureFilter] = useState(false);
 
     useEffect(() => {
         let params = {};
+        if(mineFilter) params.mine = true;
         if(pastFilter) params.is_past = true;
         if(futureFilter) params.is_future = true;
         if(dateFilter && dateFilter.isValid()) params.date = dateFilter.format('YYYY-MM-DD');
@@ -28,7 +30,7 @@ const Events = () => {
         EventService.list(params).then(
             (res) => {setEvents(res.data)}
         )
-    }, [pastFilter, futureFilter, dateFilter])
+    }, [mineFilter, pastFilter, futureFilter, dateFilter])
 
     return (
         <>
@@ -42,6 +44,12 @@ const Events = () => {
             </Box>
             <Box sx={{maxWidth: 200}}>
                 <FormGroup>
+                    <FormControlLabel
+                        control={<Checkbox />}
+                        label="Created by me"
+                        value={mineFilter}
+                        onChange={()=>setMineFilter(!mineFilter)}
+                    />
                     <FormControlLabel
                         control={<Checkbox />}
                         label="Past events"
